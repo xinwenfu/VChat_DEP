@@ -69,7 +69,7 @@ We will be preforming a simple overflow against the [TRUN](https://github.com/Da
 
 1. Compile the necessary machine instructions
 
-   <video src="ASM.mp4" controls title="Title"></video>
+	https://github.com/DaintyJet/VChat-DEP/assets/60448620/802bc78d-743c-4beb-aaf0-abce87d0842c
 
    * `mov ax,0x5555`: Instruction to put 0x5555 into the upper 16 bits
    * `add ax,ax`: Add the value in ax to itself and store the result in ax
@@ -78,17 +78,17 @@ We will be preforming a simple overflow against the [TRUN](https://github.com/Da
 2. Add the assembled instructions to the [TRUN](https://github.com/DaintyJet/VChat_TRUN) exploit as shown in [exploit1.py](./SourceCode/exploit1.py). Here we have simply added the assembly instructions to the point in the buffer located after we have returned back to the stack.
 3. Attach VChat to the Immunity debugger and run the exploit against our VChat server and observe the results.
 
-   <video src="EXP.mp4" controls title="Title"></video>
+	https://github.com/DaintyJet/VChat-DEP/assets/60448620/087314aa-039f-4515-a7a0-0567f5bcd7f4
 
    1. Click on the black button highlighted below, enter in the address we decided in the previous step
 
       <img src="Images/I16.png" width=600>
 
-   2. Set a breakpoint at the desired address (Right click)
+   2. Set a breakpoint at the desired address (Right-click)
 
       <img src="Images/I17.png" width=600>
 
-   3. Run the [exploit1.py](./SourceCode/exploit1.py) program till a overflow occurs (See EIP/ESP and stack changes), you should be able to tell by the black text at the bottom the the screen that says `Breakpoint at ...`.
+   3. Run the [exploit1.py](./SourceCode/exploit1.py) program till an overflow occurs (See EIP/ESP and stack changes), you should be able to tell by the black text at the bottom the screen that says `Breakpoint at ...`.
 
       <img src="Images/I18.png" width=600>
 
@@ -123,14 +123,14 @@ To get an idea of how common DEP is on a modern Windows system we can look at al
 
    <img src="Images/I6.png" width=600>
 
-Now we can configure the VChat binary to have the NX-bit set making it use the DEP features! There are four ways we can do this
+Now we can configure the VChat binary to have the NX-bit set, making it use the DEP features! There are four ways we can do this
 
 #### Compilation/EditBin
 1. **Windows**: We must set the NX-bit of the executable, we can recompile the program or use a utility to set the bit. 
    1. Recompile VChat and it's dependencies. This is done with mingw or a command prompt(Search Mingw in the search bar and select *Run Terminal*. in this case searching *mingw* brings up a normal command prompt!)
 
-      <video src="COMP.mp4" controls title="Title"></video>
-      
+	https://github.com/DaintyJet/VChat-DEP/assets/60448620/12d8048b-e258-49aa-bee8-fb6a5027e6b4
+
       1. Create the essfunc object File 
       ```powershell
       $ gcc.exe -c essfunc.c
@@ -211,17 +211,17 @@ We will use the same [exploit1.py](./SourceCode/exploit1.py) that we compiled fo
 
 1. Attach VChat to the Immunity debugger and run the exploit against our VChat server and observe the results.
 
-   <video src="EXP-DEP.mp4" controls title="Title"></video>
+	https://github.com/DaintyJet/VChat-DEP/assets/60448620/fd17763a-d89c-4295-8076-327e3abce018
 
-   1. Click on the black button highlighted below, enter in the address we decided in the previous step
+   1. Click on the black button highlighted below, and enter in the address we decided in the previous step
 
       <img src="Images/I16.png" width=600>
 
-   2. Set a breakpoint at the desired address (Right click)
+   2. Set a breakpoint at the desired address (Right-click)
 
       <img src="Images/I17.png" width=600>
 
-   3. Run the [exploit1.py](./SourceCode/exploit1.py) program till a overflow occurs (See EIP/ESP and stack changes), you should be able to tell by the black text at the bottom the the screen that says `Breakpoint at ...`.
+   3. Run the [exploit1.py](./SourceCode/exploit1.py) program till an overflow occurs (See EIP/ESP and stack changes), you should be able to tell by the black text at the bottom the screen that says `Breakpoint at ...`.
 
       <img src="Images/I18.png" width=600>
 
