@@ -57,13 +57,6 @@ This writeup will contain two pre-exploit and exploitation sections. This is sim
 
 		![Telnet](Images/Telnet.png)
 
-4. **Linux**: We can try a few inputs to the *KSTET* command, and see if we can get any information. Simply type *KSTET* followed by some additional input as shown below
-
-	![Telnet](Images/Telnet2.png)
-
-	* Now, trying every possible combinations of strings would get quite tiresome, so we can use the technique of *fuzzing* to automate this process as discussed later in the exploitation section.
-	* In this case we will do some fuzzing to keep the exploit sections relatively consistent, but as you can see we know crashing this command will not take much!
-
 ### No-DEP Exploitation 
 We will be preforming a simple overflow against the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command on VChat. This example can be done against any of the other exploitable commands. However *TRUN* was chosen due to it's simplicity. Again this will not be covering the methods we used to determine how we can exploit *TRUN* and the creation of the payload; we only show the final exploitation for a later comparison against a VChat server which has had the DEP protections enabled. There are Hundreds of machine instructions we can chose from depending on the underlying machine architecture, as we are attacking a 32-bit x86 system we can chose a few simple instructions in this attack. In this case we chose the `add`, `mov` and `sub` instructions. If you would like to modify the assembly instructions you can generate the machine code using the command `/usr/share/metasploit-framework/tools/exploit/nasm_shell.rb` on the *Kali Linux* System as has been discussed in other writeups.
 
