@@ -20,7 +20,7 @@ This writeup will contain two pre-exploit and exploitation sections. This is sim
 		# Create a the DLL with an 
 		$ gcc.exe -shared -o essfunc.dll -Wl,--out-implib=libessfunc.a -Wl,--image-base=0x62500000 essfunc.o
 		```
-         * ```-shared -o essfunc.dll```: We create a DLL "essefunc.dll", these are equivalent to the [shared library](https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html) in Linux. 
+         * ```-shared -o essfunc.dll```: We create a DLL "essfunc.dll", these are equivalent to the [shared library](https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html) in Linux. 
          * ```-Wl,--out-implib=libessfunc.a```: We tell the linker to generate generate a import library "libessfunc".a" [2].
          * ```-Wl,--image-base=0x62500000```: We specify the [Base Address](https://learn.microsoft.com/en-us/cpp/build/reference/base-base-address?view=msvc-170) as ```0x62500000``` [3].
          * ```essfunc.o```: We build the DLL based off of the object file "essfunc.o"
@@ -30,9 +30,9 @@ This writeup will contain two pre-exploit and exploitation sections. This is sim
 		```
          * ```vchat.c```: The source file is "vchat.c"
          * ```-o vchat.exe```: The output file will be the executable "vchat.exe"
-         * ```-lws2_32 ./libessfunc.a```: Link the executable against the import library "libessfunc.a", enabling it to use the DLL "essefunc.dll"
+         * ```-lws2_32 ./libessfunc.a```: Link the executable against the import library "libessfunc.a", enabling it to use the DLL "essfunc.dll"
    2. Launch the VChat application 
-		* Click on the Icon in File Explorer when it is in the same directory as the essefunc dll
+		* Click on the Icon in File Explorer when it is in the same directory as the essfunc dll
 2. **Linux**: Run NMap
 	```sh
 	# Replace the <IP> with the IP of the machine.
@@ -56,6 +56,13 @@ This writeup will contain two pre-exploit and exploitation sections. This is sim
    * An example is shown below
 
 		![Telnet](Images/Telnet.png)
+
+4. **Linux**: We can try a few inputs to the *KSTET* command, and see if we can get any information. Simply type *KSTET* followed by some additional input as shown below
+
+	![Telnet](Images/Telnet2.png)
+
+	* Now, trying every possible combinations of strings would get quite tiresome, so we can use the technique of *fuzzing* to automate this process as discussed later in the exploitation section.
+	* In this case we will do some fuzzing to keep the exploit sections relatively consistent, but as you can see we know crashing this command will not take much!
 
 ### No-DEP Exploitation 
 We will be preforming a simple overflow against the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command on VChat. This example can be done against any of the other exploitable commands. However *TRUN* was chosen due to it's simplicity. Again this will not be covering the methods we used to determine how we can exploit *TRUN* and the creation of the payload; we only show the final exploitation for a later comparison against a VChat server which has had the DEP protections enabled. There are Hundreds of machine instructions we can chose from depending on the underlying machine architecture, as we are attacking a 32-bit x86 system we can chose a few simple instructions in this attack. In this case we chose the `add`, `mov` and `sub` instructions. If you would like to modify the assembly instructions you can generate the machine code using the command `/usr/share/metasploit-framework/tools/exploit/nasm_shell.rb` on the *Kali Linux* System as has been discussed in other writeups.
@@ -133,7 +140,7 @@ Now we can configure the VChat binary to have the NX-bit set, making it use the 
       # Create a the DLL with an 
       $ gcc.exe -shared -o essfunc.dll -Wl,--out-implib=libessfunc.a -Wl,--image-base=0x62500000 essfunc.o
       ```
-         * ```-shared -o essfunc.dll```: We create a DLL "essefunc.dll", these are equivalent to the [shared library](https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html) in Linux. 
+         * ```-shared -o essfunc.dll```: We create a DLL "essfunc.dll", these are equivalent to the [shared library](https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html) in Linux. 
          * ```-Wl,--out-implib=libessfunc.a```: We tell the linker to generate generate a import library "libessfunc".a" [2].
          * ```-Wl,--image-base=0x62500000```: We specify the [Base Address](https://learn.microsoft.com/en-us/cpp/build/reference/base-base-address?view=msvc-170) as ```0x62500000``` [3].
          * ```essfunc.o```: We build the DLL based off of the object file "essfunc.o"
@@ -144,7 +151,7 @@ Now we can configure the VChat binary to have the NX-bit set, making it use the 
          * ```vchat.c```: The source file is "vchat.c"
          * ```-Wl,-nxcompat```: This enables the DEP Protections
          * ```-o vchat.exe```: The output file will be the executable "vchat.exe"
-         * ```-lws2_32 ./libessfunc.a```: Link the executable against the import library "libessfunc.a", enabling it to use the DLL "essefunc.dll"
+         * ```-lws2_32 ./libessfunc.a```: Link the executable against the import library "libessfunc.a", enabling it to use the DLL "essfunc.dll"
    2. Use a tool such as [editbin.exe](https://learn.microsoft.com/en-us/cpp/build/reference/editbin-reference?view=msvc-170), you will need to install [Additional MSVC Build Tools](https://learn.microsoft.com/en-us/cpp/build/reference/c-cpp-build-tools?view=msvc-170) in order to use this program.
 
       1. [Install](https://visualstudio.microsoft.com/downloads) for the appropriate build tools
