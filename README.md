@@ -5,11 +5,32 @@ ___
 
 There are a number of protections that systems put in place to prevent or limit the effectiveness of buffer overflows. There are those that attempt to prevent the attacker from gaining control over the flow of execution like [Stack Canaries](https://www.usenix.org/legacy/publications/library/proceedings/sec98/full_papers/cowan/cowan.pdf) which aim to protect the return address. There are also those such as [Address Space Layout Randomization](https://www.ibm.com/docs/en/zos/3.1.0?topic=overview-address-space-layout-randomization) that make it more difficult for for overflows to be successful or locate the addresses of those functions, and libraries they require. With this document we will be focusing on something known as [Data Execution Prevention (DEP)](https://learn.microsoft.com/en-us/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10#data-execution-prevention), with this protection scheme we set something known as the No eXecute (NX) bit. This is generally a hardware based protection (Software based DEP does exist), and if the NX-bit of a memory page is set the CPU will not allow the execution of instructions located within that memory page as it should be *read-only*. Looking at previous exploits we have heavily relied on being able to execute instructions that we have placed into the stack.
 
+**Notice**: Please setup the Windows and Linux systems as described in [SystemSetup](./SystemSetup/README.md)!
 ## Exploitation
 This writeup will contain two pre-exploit and exploitation sections. This is simply to show the effects of using the DEP protections. Details of creating an exploit for the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command will not be included as this has been done previously.
 
 ### No-DEP PreExploitation
-1. **Windows**: Setup Vchat
+
+1. Within the VirtualBox Settings (If you are using VirtualBox) enable the PAE/NX features for the Windows VM in order to allow this demonstration to work.
+
+   1. Open the VirtualBox Settings for the Windows VM
+
+      ![Open the Settings](Images/VBSettings.png)
+
+   2. Navigate to the System Section
+      
+      ![System](Images/System.png)
+
+   3. Navigate to the Processor Tab
+
+      ![Processor](Images/Processor.png)
+
+   4. Enable PAE/NX through the clicking the checkbox    
+
+      ![Enable PAE/NX](Images/EnableNX.png) 
+   
+
+2. **Windows**: Setup Vchat
    1. Compile VChat and it's dependencies if they has not already been compiled. This is done with mingw 
       1. Create the essfunc object File 
 		```powershell
@@ -32,8 +53,8 @@ This writeup will contain two pre-exploit and exploitation sections. This is sim
          * ```-o vchat.exe```: The output file will be the executable "vchat.exe"
          * ```-lws2_32 ./libessfunc.a```: Link the executable against the import library "libessfunc.a", enabling it to use the DLL "essfunc.dll"
    2. Launch the VChat application 
-		* Click on the Icon in File Explorer when it is in the same directory as the essfunc dll
-2. **Linux**: Run NMap
+		* Click on the Icon in File Explorer when it is in the same directory as the essefunc dll
+3. **Linux**: Run NMap
 	```sh
 	# Replace the <IP> with the IP of the machine.
 	$ nmap -A <IP>
@@ -44,7 +65,7 @@ This writeup will contain two pre-exploit and exploitation sections. This is sim
 
 		![NMap](Images/Nmap.png)
 
-3. **Linux**: As we can see the port ```9999``` is open, we can try accessing it using **Telnet** to send unencrypted communications
+4. **Linux**: As we can see the port ```9999``` is open, we can try accessing it using **Telnet** to send unencrypted communications
 	```
 	$ telnet <VChat-IP> <Port>
 
@@ -57,7 +78,7 @@ This writeup will contain two pre-exploit and exploitation sections. This is sim
 
 		![Telnet](Images/Telnet.png)
 
-4. **Linux**: We can try a few inputs to the *KSTET* command, and see if we can get any information. Simply type *KSTET* followed by some additional input as shown below
+5. **Linux**: We can try a few inputs to the *KSTET* command, and see if we can get any information. Simply type *KSTET* followed by some additional input as shown below
 
 	![Telnet](Images/Telnet2.png)
 
@@ -184,6 +205,20 @@ We can (Optionally) modify the Windows settings to enforce Data Execution Protec
 4. Restart the system
    **Note**: ONLY do this if you have all the required recovery keys such as the bitlocker recovery key. Before the system can fully boot you will be required to enter a Bit-Locker recovery key. 
 
+**Additionally** we can also enable this in the *Exploit Protections Settings* as shown below:
+
+1. Open Windows Settings
+        
+   <img src="Images/I9a.png" width=600>
+   
+2. Search for the Exploit Protection configuration menu.
+
+   <img src="Images/I9b.png" width=600>
+
+3. Enable DEP by default
+
+   <img src="Images/I9c.png" width=600>
+
 #### System Wide (CLI)
 If you would rather use the Command Line Interface (CLI) for this system-wide configuration, you should do the following. This uses the [bcdedit](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/bcdedit) command line tool to edit the [nx](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/boot-parameters-to-configure-dep-and-pae) configurations. 
 
@@ -248,3 +283,5 @@ DEP is only one manner of defending against buffer overflows, when it is enabled
 [6] https://www.sans.org/blog/stack-canaries-gingerly-sidestepping-the-cage/
 
 [7] https://gist.github.com/jrelo/f5c976fdc602688a0fd40288fde6d886
+
+[8] https://learn.microsoft.com/en-us/windows/win32/memory/physical-address-extension
