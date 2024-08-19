@@ -1,16 +1,22 @@
 # VChat: Data Execution Prevention
-
-*Notice*: The following exploit, and its procedures are based on the original [Blog](https://fluidattacks.com/blog/understanding-dep/).
+> [!NOTE]
+> - The following exploit and its procedures are based on an original [Blog](https://fluidattacks.com/blog/understanding-dep/) from fluid attacks.
+> - Disable Windows *Real-time protection* at *Virus & threat protection* -> *Virus & threat protection settings*.
+> - Don't copy the *$* sign when copying and pasting a command in this tutorial.
+> - Offsets may vary depending on what version of VChat was compiled, the version of the compiler used and any compiler flags applied during the compilation process.
 ___
 
 There are a number of protections that systems put in place to prevent or limit the effectiveness of buffer overflows. There are those that attempt to prevent the attacker from gaining control over the flow of execution like [Stack Canaries](https://www.usenix.org/legacy/publications/library/proceedings/sec98/full_papers/cowan/cowan.pdf) which aim to protect the return address. There are also those such as [Address Space Layout Randomization](https://www.ibm.com/docs/en/zos/3.1.0?topic=overview-address-space-layout-randomization) that make it more difficult for overflows to be successful or locate the addresses of the target functions, and libraries they require. With this document we will be focusing on something known as [Data Execution Prevention (DEP)](https://learn.microsoft.com/en-us/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10#data-execution-prevention), with this protection scheme we set something known as the No eXecute (NX) bit on specific memory pages. This is generally a hardware based protection (Software based DEP does exist), and if the NX-bit of a memory page is set the CPU will not allow the execution of instructions located within that memory page as it should be *read/write-only*. Looking at previous exploits we have heavily relied on being able to execute instructions that we have placed into the stack.
 
-**Notice**: Please setup the Windows and Linux systems as described in [SystemSetup](./SystemSetup/README.md)!
+> [!IMPORTANT]
+> Please set up the Windows and Linux systems as described in [SystemSetup](./SystemSetup/README.md)!
+
+
+
 ## Exploitation
 This writeup will contain two pre-exploit and exploitation sections. This is simply to show the effects of using the DEP protections. Details of creating an exploit for the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command will not be included as this has been done previously.
 
-### No-DEP PreExploitation
-
+### VirtualBox Configuration
 1. Within the VirtualBox Settings (If you are using VirtualBox) enable the PAE/NX features for the Windows VM in order to allow this demonstration to work.
 
    1. Open the VirtualBox Settings for the Windows VM.
@@ -29,8 +35,21 @@ This writeup will contain two pre-exploit and exploitation sections. This is sim
 
       ![Enable PAE/NX](Images/EnableNX.png) 
 
-2. **Windows**: Setup Vchat.
-   1. Compile VChat and it's dependencies if they has not already been compiled. This is done with mingw.
+### No-DEP Pre-Exploitation
+This section covers the compilation process, and use of the VChat Server. We include instructions for both the original VChat code which was compiled with MinGW and GCC on Windows, and the newly modified code that can be compiled with the Visual Studio C++ compiler. This does not differ from the previously discussed methods as we are not enabling any security features.
+
+#### Visual Studio
+1. Open the [Visual Studio project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/DLL/Essfun) for the *essfunc* DLL.
+2. Build the project, as this contains inline assembly the target DLL file must be compiled as a x86 DLL (32-bits).
+3. Copy the Resulting DLL from the *Debug* folder in the [Essfunc Project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/DLL/Essfun/Debug) into the *Debug* folder in the [VChat Project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/EXE/VChat/Debug)
+
+	<img src="Images/VS-Comp.png">
+
+4. Open the [Visual Studio project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/EXE/VChat) for the *VChat* EXE.
+5. Build the Project, our executable will be in the *Debug* folder. You can then launch the executable!
+#### Mingw/GCC
+
+   1. Compile VChat and its dependencies if they have not already been compiled. This is done with mingw.
       1. Create the essfunc object File. 
 		```powershell
 		# Compile Essfunc Object file 
@@ -38,14 +57,14 @@ This writeup will contain two pre-exploit and exploitation sections. This is sim
 		```
       2. Create the [DLL](https://learn.microsoft.com/en-us/troubleshoot/windows-client/deployment/dynamic-link-library) containing functions that will be used by the VChat.   
 		```powershell
-		# Create a the DLL with a static (preferred) base address of 0x62500000
+		# Create a DLL with a static (preferred) base address of 0x62500000
 		$ gcc.exe -shared -o essfunc.dll -Wl,--out-implib=libessfunc.a -Wl,--image-base=0x62500000 essfunc.o
 		```
-         * ```-shared -o essfunc.dll```: We create a DLL "essfunc.dll", these are equivalent to the [shared library](https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html) in Linux. 
+         * ```-shared -o essfunc.dll```: We create a DLL "essfunc.dll", these are equivalent to the [shared library](https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html) in Linux.
          * ```-Wl,--out-implib=libessfunc.a```: We tell the linker to generate generate a import library "libessfunc".a" [2].
          * ```-Wl,--image-base=0x62500000```: We specify the [Base Address](https://learn.microsoft.com/en-us/cpp/build/reference/base-base-address?view=msvc-170) as ```0x62500000``` [3].
          * ```essfunc.o```: We build the DLL based off of the object file "essfunc.o"
-      3. Compile the VChat application. 
+      3. Compile the VChat application.
 		```powershell
 		# Compile and Link VChat
 		$ gcc.exe vchat.c -o vchat.exe -lws2_32 ./libessfunc.a
@@ -53,9 +72,12 @@ This writeup will contain two pre-exploit and exploitation sections. This is sim
          * ```vchat.c```: The source file is "vchat.c".
          * ```-o vchat.exe```: The output file will be the executable "vchat.exe".
          * ```-lws2_32 ./libessfunc.a```: Link the executable against the import library "libessfunc.a", enabling it to use the DLL "essfunc.dll".
-   2. Launch the VChat application. 
-		* Click on the Icon in File Explorer when it is in the same directory as the essfunc dll.
-2. **Linux**: Run NMap.
+
+### Information Collection
+1. Launch the VChat application.
+	* Click on the Icon in File Explorer when it is in the same directory as the essfunc dll.
+	* You can also use the simple [VChatGUI](https://github.com/daintyjet/VChatGUI) program to launch the executable.
+2. (Optional) **Linux**: Run NMap.
 	```sh
 	# Replace the <IP> with the IP of the machine.
 	$ nmap -A <IP>
@@ -81,7 +103,7 @@ This writeup will contain two pre-exploit and exploitation sections. This is sim
 
 
 ### No-DEP Exploitation 
-We will be preforming a simple overflow against the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command on VChat. This example can be done against any of the other exploitable commands. However *TRUN* was chosen due to it's simplicity. Again this will not be covering the methods we used to determine how we can exploit *TRUN* and the creation of the payload; we only show the final exploitation for a later comparison against a VChat server which has had the DEP protections enabled. To show this, we only need to try and execute some instruction and there are hundreds of machine instructions we can chose from depending on the underlying machine architecture, as we are attacking a 32-bit x86 system we can chose a few simple instructions in this attack. In this case we chose the `add`, `mov` and `sub` instructions. If you would like to modify the assembly instructions you can generate the machine code using the command `/usr/share/metasploit-framework/tools/exploit/nasm_shell.rb` on the *Kali Linux* System as has been discussed in other writeups.
+We will be preforming a simple overflow against the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command on VChat. This example can be done against any of the other exploitable VCHAT commands. However *TRUN* was chosen due to it's simplicity. Again this will not be covering the methods we used to determine how we can exploit *TRUN* and the creation of the payload; we only show the final exploitation for a later comparison against a VChat server which has had the DEP protections enabled. To show this, we only need to try and execute some instruction and there are hundreds of machine instructions we can chose from depending on the underlying machine architecture, as we are attacking a 32-bit x86 system we can chose a few simple instructions in this attack. In this case we chose the `add`, `mov` and `sub` instructions. If you would like to modify the assembly instructions you can generate the machine code using the command `/usr/share/metasploit-framework/tools/exploit/nasm_shell.rb` on a *Kali Linux* system as has been discussed in other writeups.
 
 1. Compile the necessary machine instructions.
 
@@ -91,7 +113,7 @@ We will be preforming a simple overflow against the [TRUN](https://github.com/Da
    * `add ax,ax`: Add the value in ax to itself and store the result in ax.
    * `sub ax,ax`: Subtract ax from itself and store the result in ax (Should be 0).
 
-2. Add the assembled instructions to the [TRUN](https://github.com/DaintyJet/VChat_TRUN) exploit as shown in [exploit1.py](./SourceCode/exploit1.py). Here we have simply added the assembly instructions to the point in the buffer located after we have returned back to the stack.
+2. Add the assembled instructions to the [TRUN](https://github.com/DaintyJet/VChat_TRUN) exploit as shown in [exploit1.py](./SourceCode/exploit1.py). Here we have simply added the assembly instructions to the point in the buffer located after we have returned back to the stack. This is no different from the previous TRUN exploits we have observed previously.
 3. Attach VChat to the Immunity debugger and run the exploit against our VChat server and observe the results.
 
 	https://github.com/DaintyJet/VChat-DEP/assets/60448620/087314aa-039f-4515-a7a0-0567f5bcd7f4
@@ -110,10 +132,8 @@ We will be preforming a simple overflow against the [TRUN](https://github.com/Da
 
    4. Step into the JMP instruction and observe the results Notice that our instructions, in this case a `mov`, `add`, and `sub` all have an effect on the registers! This is because we do not have DEP enabled for this VChat process!
 
-
-
-### DEP-PreExploitation
-To get an idea of how common DEP is on a modern Windows system we can look at all the processes running on our system to see those running with a NX-bit set. This should be a common sight in most modern systems and processes!
+### DEP Enabled Pre-Exploitation
+To get an idea of how common DEP is on a modern Windows system we can look at all the processes running on our system to see those running with the NX-bit set. This should be a common sight in most modern systems and processes!
 
 1. Open Task Manager.
 
@@ -141,51 +161,75 @@ To get an idea of how common DEP is on a modern Windows system we can look at al
 
 Now we can configure the VChat binary to have the NX-bit set, making it use the DEP features! There are four ways we can do this
 
+> [!IMPORTANT]
+> You can also perform as similar examination with the *Process Explorer* tool!
+
 #### Compilation/EditBin
-1. **Windows**: We must set the NX-bit in various regions of the executable, to do this we can recompile the program or use a utility to set these bits. 
-   1. Recompile VChat and it's dependencies. This is done with mingw or a command prompt (Search Mingw in the search bar and select *Run Terminal*. in this case searching *mingw* brings up a normal command prompt!)
+On **Windows** in order to benifit from DEP we must set the NX-bit in various regions of the executable in order to observe this protection's behavior. To do this we can recompile the program or use a utility to set these bits.
+
+
+#### Visual Studio
+1. Open the [Visual Studio project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/DLL/Essfun) for the *essfunc* DLL.
+2. Build the project, as this contains inline assembly the target DLL file must be compiled as a x86 DLL (32-bits).
+3. Copy the Resulting DLL from the *Debug* folder in the [Essfunc Project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/DLL/Essfun/Debug) into the *Debug* folder in the [VChat Project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/EXE/VChat/Debug)
+
+	<img src="Images/VS-Comp.png">
+
+4. Open the [Visual Studio project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/EXE/VChat) for the *VChat* EXE.
+5. Open the Project Dropdown and select `Properties`
+
+	<img src="Images/VS-Drop.png">
+
+6. In the `Linker` -> `Advanced` options menu. Enable DEP by setting the `/NXCOMPAT` flag. Then click *Apply*.
+
+	<img src="Images/VS-Modify.png">
+
+7. Build the Project, our executable will be in the *Debug* folder. You can then launch the executable!
+#### Mingw/GCC
+1. Recompile VChat and it's dependencies. This is done with mingw or a command prompt (Search Mingw in the search bar and select *Run Terminal*. in this case searching *mingw* brings up a normal command prompt!)
 
 	https://github.com/DaintyJet/VChat-DEP/assets/60448620/12d8048b-e258-49aa-bee8-fb6a5027e6b4
 
-      1. Create the essfunc object File 
-      ```powershell
-		# Compile Essfunc Object file 
-      $ gcc.exe -c essfunc.c
-      ```
-      2. Create the [DLL](https://learn.microsoft.com/en-us/troubleshoot/windows-client/deployment/dynamic-link-library) containing functions that will be used by the VChat.   
-      ```powershell
-      # Create a the DLL with a static (preferred) base address of 0x62500000
-      $ gcc.exe -shared -o essfunc.dll -Wl,--out-implib=libessfunc.a -Wl,--image-base=0x62500000 essfunc.o
-      ```
-         * ```-shared -o essfunc.dll```: We create a DLL "essfunc.dll", these are equivalent to the [shared library](https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html) in Linux. 
-         * ```-Wl,--out-implib=libessfunc.a```: We tell the linker to generate generate a import library "libessfunc".a" [2].
-         * ```-Wl,--image-base=0x62500000```: We specify the [Base Address](https://learn.microsoft.com/en-us/cpp/build/reference/base-base-address?view=msvc-170) as ```0x62500000``` [3].
-         * ```essfunc.o```: We build the DLL based off of the object file "essfunc.o"
-      3. Compile the VChat application with NX-Bits set. 
-      ```powershell
-		# Compile and Link VChat with NX-Bits set
-      $ gcc.exe vchat.c -Wl,-nxcompat -o vchat.exe -lws2_32 ./libessfunc.a
-      ```
-         * ```vchat.c```: The source file is "vchat.c".
-         * ```-Wl,-nxcompat```: This enables the DEP Protections.
-         * ```-o vchat.exe```: The output file will be the executable "vchat.exe".
-         * ```-lws2_32 ./libessfunc.a```: Link the executable against the import library "libessfunc.a", enabling it to use the DLL "essfunc.dll".
-   2. Use a tool such as [editbin.exe](https://learn.microsoft.com/en-us/cpp/build/reference/editbin-reference?view=msvc-170), you will need to install [Additional MSVC Build Tools](https://learn.microsoft.com/en-us/cpp/build/reference/c-cpp-build-tools?view=msvc-170) in order to use this program.
+   1. Create the essfunc object File 
+   ```powershell
+	# Compile Essfunc Object file 
+   $ gcc.exe -c essfunc.c
+   ```
+   2. Create the [DLL](https://learn.microsoft.com/en-us/troubleshoot/windows-client/deployment/dynamic-link-library) containing functions that will be used by the VChat.   
+   ```powershell
+   # Create a the DLL with a static (preferred) base address of 0x62500000
+   $ gcc.exe -shared -o essfunc.dll -Wl,--out-implib=libessfunc.a -Wl,--image-base=0x62500000 essfunc.o
+   ```
+      * ```-shared -o essfunc.dll```: We create a DLL "essfunc.dll", these are equivalent to the [shared library](https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html) in Linux. 
+      * ```-Wl,--out-implib=libessfunc.a```: We tell the linker to generate generate a import library "libessfunc".a" [2].
+      * ```-Wl,--image-base=0x62500000```: We specify the [Base Address](https://learn.microsoft.com/en-us/cpp/build/reference/base-base-address?view=msvc-170) as ```0x62500000``` [3].
+      * ```essfunc.o```: We build the DLL based off of the object file "essfunc.o"
+   3. Compile the VChat application with NX-Bits set. 
+   ```powershell
+	# Compile and Link VChat with NX-Bits set
+   $ gcc.exe vchat.c -Wl,-nxcompat -o vchat.exe -lws2_32 ./libessfunc.a
+   ```
+      * ```vchat.c```: The source file is "vchat.c".
+      * ```-Wl,-nxcompat```: This enables the DEP Protections.
+      * ```-o vchat.exe```: The output file will be the executable "vchat.exe".
+      * ```-lws2_32 ./libessfunc.a```: Link the executable against the import library "libessfunc.a", enabling it to use the DLL "essfunc.dll".
+2. Use a tool such as [editbin.exe](https://learn.microsoft.com/en-us/cpp/build/reference/editbin-reference?view=msvc-170), you will need to install [Additional MSVC Build Tools](https://learn.microsoft.com/en-us/cpp/build/reference/c-cpp-build-tools?view=msvc-170) in order to use this program.
 
-      1. [Install](https://visualstudio.microsoft.com/downloads) for the appropriate build tools
-      2. Open a **Developer Powershell For Visual Studio**.
-         
-         <img src="Images/I13.png" width=600>
+   1. [Install](https://visualstudio.microsoft.com/downloads) for the appropriate build tools
+   2. Open a **Developer Powershell For Visual Studio**.
 
-      3. Run the following command:
-         ```
-         $ editbin.exe /NXCOMPAT vchat.exe
-         ```
+      <img src="Images/I13.png" width=600>
 
-#### System Wide (GUI)
+   3. Run the following command:
+      ```
+      $ editbin.exe /NXCOMPAT vchat.exe
+      ```
+
+#### (Optional) System Wide - GUI
 We can (Optionally) modify the Windows settings to enforce Data Execution Protections on all processes; This is a *system-wide* setting. (If you have bitlocker, please do **NOT** do this unless you know what you are doing!)
 
-**Note**: ONLY do this if you have all the required recovery keys such as the bitlocker recovery key. Before the system can fully boot you will be required to enter a Bit-Locker recovery key when this is done.
+> [!IMPORTANT]
+>  ONLY do this if you have all the required recovery keys such as a bitlocker recovery key for your device. Before the system can fully boot you will be required to enter a Bit-Locker recovery key when this setting is enabled.
 
 1. Open Windows *view advanced system settings* (Use the search bar).
 
@@ -200,14 +244,14 @@ We can (Optionally) modify the Windows settings to enforce Data Execution Protec
    <img src="Images/I9.png" width=600>
 
 4. Restart the system.
-   **Note**: ONLY do this if you have all the required recovery keys such as the bitlocker recovery key. Before the system can fully boot you will be required to enter a Bit-Locker recovery key. 
+   **Note**: ONLY do this if you have all the required recovery keys such as the bitlocker recovery key. Before the system can fully boot you will be required to enter a Bit-Locker recovery key.
 
 **Additionally** we can also enable this in the *Exploit Protections Settings* as shown below:
 
 1. Open Windows Settings.
-        
+
    <img src="Images/I9a.png" width=600>
-   
+
 2. Search for the Exploit Protection configuration menu.
 
    <img src="Images/I9b.png" width=600>
@@ -216,16 +260,17 @@ We can (Optionally) modify the Windows settings to enforce Data Execution Protec
 
    <img src="Images/I9c.png" width=600>
 
-#### System Wide (CLI)
-If you would rather use the Command Line Interface (CLI) for this system-wide configuration, you should do the following. This uses the [bcdedit](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/bcdedit) command line tool to edit the [nx](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/boot-parameters-to-configure-dep-and-pae) configurations. 
+#### (Optional) System Wide - CLI
+If you would rather use the Command Line Interface (CLI) for this system-wide configuration, you should do the following. This uses the [bcdedit](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/bcdedit) command line tool to edit the [nx](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/boot-parameters-to-configure-dep-and-pae) configurations.
 
-**Note**: ONLY do this if you have all the required recovery keys such as the bitlocker recovery key. Before the system can fully boot you will be required to enter a Bit-Locker recovery key when this is done.
+> [!IMPORTANT]
+>  ONLY do this if you have all the required recovery keys such as a bitlocker recovery key for your device. Before the system can fully boot you will be required to enter a Bit-Locker recovery key when this setting is enabled.
 
-1. Open Powershell as an administrator. 
+1. Open Powershell as an administrator.
 
    <img src="Images/I11.png" width=600>
 
-2. Run the following command to enable the NX bit for all processes: 
+2. Run the following command to enable the NX bit for all processes:
    ```
    $ bcdedit /set nx AlwaysOn
    ```
@@ -235,11 +280,12 @@ If you have attached the VChat Executable to the Immunity debugger you can run `
 
 <img src="Images/I10.png" width=600>
 
-### DEP Exploit
+### Exploiting With DEP
 
-**Note:** DEP protections may not work on Virtual Machines running on specific platforms (Virtualbox Version 7.0). This may require us to run the program on a some other system to show this behavior. 
+> [!IMPORTANT]
+> DEP protections may not work on Virtual Machines running on specific platforms (Virtualbox Version 7.0). This may require us to run the program on a some other system to show this behavior.
 
-We will use the same [exploit1.py](./SourceCode/exploit1.py) that we compiled for the [No-Dep Exploitation section](#no-dep-exploitation), for details on the commands used to generate this please refer to the earlier section.  
+We will use the same [exploit1.py](./SourceCode/exploit1.py) that we compiled for the [No-Dep Exploitation section](#no-dep-exploitation), for details on the commands used to generate this please refer to the earlier section.
 
 1. Attach VChat to the Immunity debugger and run the exploit against our VChat server and observe the results.
 
@@ -261,24 +307,24 @@ We will use the same [exploit1.py](./SourceCode/exploit1.py) that we compiled fo
 
       <img src="Images/I12.png" width=600>
 
-DEP is only one manner of defending against buffer overflows, when it is enabled it only makes preforming an overflow harder. It does not make it impossible, you can enable additional protections such as ASLR and Stack Canaries to make exploitations even harder. However, when DEP is the only protection enabled, we can with relative ease use a technique known as [Return Oriented Programming](https://dl.acm.org/doi/10.1145/2133375.2133377) to overcome the DEP protections. 
+DEP is only one manner of defending against buffer overflows, when it is enabled it only makes preforming an overflow harder. It does not make them impossible, you can enable additional protections such as ASLR and Stack Canaries to make exploitations even harder. However, when DEP is the only protection enabled, we can with relative ease use a technique known as [Return Oriented Programming](https://dl.acm.org/doi/10.1145/2133375.2133377) to overcome the DEP protections.
 
 ## Test code
 1. [exploit1.py](SourceCode/exploit1.py): Exploit the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command placing a `mov`, `add`, and `sub` instruction onto the stack.
 
 ## References 
-[1] https://learn.microsoft.com/en-us/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10#data-execution-prevention
+[[1] Mitigate threats by using Windows 10 security features](https://learn.microsoft.com/en-us/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10#data-execution-prevention)
 
-[2] https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/no-execute-nonpaged-pool
+[[2] No-Execute (NX) Nonpaged Pool](https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/no-execute-nonpaged-pool)
 
-[3] https://mdanilor.github.io/posts/memory-protections/
+[[3] Understanding binary protections (and how to bypass) with a dumb example](https://mdanilor.github.io/posts/memory-protections/)
 
-[4] https://access.redhat.com/solutions/2936741
+[[4] What is NX/XD feature?](https://access.redhat.com/solutions/2936741)
 
-[5] https://www.usenix.org/legacy/publications/library/proceedings/sec98/full_papers/cowan/cowan.pdf
+[[5] StackGuard: Automatic Adaptive Detection  and Prevention of Buffer-Overflow Attacks](https://www.usenix.org/legacy/publications/library/proceedings/sec98/full_papers/cowan/cowan.pdf)
 
-[6] https://www.sans.org/blog/stack-canaries-gingerly-sidestepping-the-cage/
+[[6] Stack Canaries – Gingerly Sidestepping the Cage](https://www.sans.org/blog/stack-canaries-gingerly-sidestepping-the-cage/)
 
-[7] https://gist.github.com/jrelo/f5c976fdc602688a0fd40288fde6d886
+[[7] GCC Security](https://gist.github.com/jrelo/f5c976fdc602688a0fd40288fde6d886)
 
-[8] https://learn.microsoft.com/en-us/windows/win32/memory/physical-address-extension
+[[8] Physical Address Extension](https://learn.microsoft.com/en-us/windows/win32/memory/physical-address-extension)
