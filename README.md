@@ -6,7 +6,7 @@
 > - Offsets may vary depending on what version of VChat was compiled, the version of the compiler used and any compiler flags applied during the compilation process.
 ___
 
-There are a number of protections that systems put in place to prevent or limit the effectiveness of buffer overflows. There are those that attempt to prevent the attacker from gaining control over the flow of execution like [Stack Canaries](https://www.usenix.org/legacy/publications/library/proceedings/sec98/full_papers/cowan/cowan.pdf) which aim to protect the return address. There are also those such as [Address Space Layout Randomization](https://www.ibm.com/docs/en/zos/3.1.0?topic=overview-address-space-layout-randomization) that make it more difficult for overflows to be successful or locate the addresses of the target functions, and libraries they require. With this document we will be focusing on something known as [Data Execution Prevention (DEP)](https://learn.microsoft.com/en-us/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10#data-execution-prevention), with this protection scheme we set something known as the No eXecute (NX) bit on specific memory pages. This is generally a hardware based protection (Software based DEP does exist), and if the NX-bit of a memory page is set the CPU will not allow the execution of instructions located within that memory page as it should be *read/write-only*. Looking at previous exploits we have heavily relied on being able to execute instructions that we have placed into the stack.
+There are a number of protections that systems put in place to prevent or limit the effectiveness of buffer overflows. There are those that attempt to prevent the attacker from gaining control over the flow of execution, like [Stack Canaries](https://www.usenix.org/legacy/publications/library/proceedings/sec98/full_papers/cowan/cowan.pdf), which aim to protect the return address. There are also those such as [Address Space Layout Randomization](https://www.ibm.com/docs/en/zos/3.1.0?topic=overview-address-space-layout-randomization) that make it more difficult for overflows to be successful or locate the addresses of the target functions, and libraries they require. With this document, we will be focusing on something known as [Data Execution Prevention (DEP)](https://learn.microsoft.com/en-us/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10#data-execution-prevention), with this protection scheme we set something known as the No eXecute (NX) bit on specific memory pages. This is generally a hardware-based protection (Software-based DEP does exist), and if the NX-bit of a memory page is set, the CPU will not allow the execution of instructions located within that memory page as it should be *read/write-only*. Looking at previous exploits, we have heavily relied on being able to execute instructions that we have placed into the stack.
 
 > [!IMPORTANT]
 > Please set up the Windows and Linux systems as described in [SystemSetup](./SystemSetup/README.md)!
@@ -14,7 +14,7 @@ There are a number of protections that systems put in place to prevent or limit 
 
 
 ## Exploitation
-This writeup will contain two pre-exploit and exploitation sections. This is simply to show the effects of using the DEP protections. Details of creating an exploit for the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command will not be included as this has been done previously.
+This write-up will contain two pre-exploit and exploitation sections. This is simply to show the effects of using the DEP protections. Details of creating an exploit for the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command will not be included, as this has been done previously.
 
 ### VirtualBox Configuration
 1. Within the VirtualBox Settings (If you are using VirtualBox) enable the PAE/NX features for the Windows VM in order to allow this demonstration to work.
@@ -31,7 +31,7 @@ This writeup will contain two pre-exploit and exploitation sections. This is sim
 
       ![Processor](Images/Processor.png)
 
-   4. Enable PAE/NX through the clicking the checkbox.    
+   4. Enable PAE/NX by clicking the checkbox.    
 
       ![Enable PAE/NX](Images/EnableNX.png) 
 
@@ -82,8 +82,8 @@ This section covers the compilation process, and use of the VChat Server. We inc
 	# Replace the <IP> with the IP of the machine.
 	$ nmap -A <IP>
 	```
-   * We can think of the "-A" flag like the term aggressive as it does more than the normal scans, and is often easily detected.
-   * This scan will also attempt to determine the version of the applications, this means when it encounters a non-standard application such as *VChat* it can take 30 seconds to 1.5 minuets depending on the speed of the systems involved to finish scanning. You may find the scan ```nmap <IP>``` without any flags to be quicker!
+   * We can think of the "-A" flag as the term aggressive as it does more than the normal scans and is often easily detected.
+   * This scan will also attempt to determine the version of the applications; this means when it encounters a non-standard application such as *VChat*, it can take 30 seconds to 1.5 minutes, depending on the speed of the systems involved, to finish scanning. You may find the scan ```nmap <IP>``` without any flags to be quicker!
    * Example results are shown below:
 
 		![NMap](Images/Nmap.png)
@@ -103,7 +103,7 @@ This section covers the compilation process, and use of the VChat Server. We inc
 
 
 ### No-DEP Exploitation 
-We will be preforming a simple overflow against the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command on VChat. This example can be done against any of the other exploitable VCHAT commands. However *TRUN* was chosen due to it's simplicity. Again this will not be covering the methods we used to determine how we can exploit *TRUN* and the creation of the payload; we only show the final exploitation for a later comparison against a VChat server which has had the DEP protections enabled. To show this, we only need to try and execute some instruction and there are hundreds of machine instructions we can chose from depending on the underlying machine architecture, as we are attacking a 32-bit x86 system we can chose a few simple instructions in this attack. In this case we chose the `add`, `mov` and `sub` instructions. If you would like to modify the assembly instructions you can generate the machine code using the command `/usr/share/metasploit-framework/tools/exploit/nasm_shell.rb` on a *Kali Linux* system as has been discussed in other writeups.
+We will be performing a simple overflow against the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command on VChat. This example can be done against any of the other exploitable VCHAT commands. However *TRUN* was chosen due to it's simplicity. Again this will not be covering the methods we used to determine how we can exploit *TRUN* and the creation of the payload; we only show the final exploitation for a later comparison against a VChat server which has had the DEP protections enabled. To show this, we only need to try and execute some instruction and there are hundreds of machine instructions we can chose from depending on the underlying machine architecture, as we are attacking a 32-bit x86 system we can chose a few simple instructions in this attack. In this case we chose the `add`, `mov` and `sub` instructions. If you would like to modify the assembly instructions you can generate the machine code using the command `/usr/share/metasploit-framework/tools/exploit/nasm_shell.rb` on a *Kali Linux* system as has been discussed in other writeups.
 
 1. Compile the necessary machine instructions.
 
@@ -147,7 +147,7 @@ To get an idea of how common DEP is on a modern Windows system we can look at al
 
    <img src="Images/I3.png" width=600>
 
-4. Right click a column and click *Select Columns*.
+4. Right-click a column and click *Select Columns*.
 
    <img src="Images/I4.png" width=600>
 
@@ -155,7 +155,7 @@ To get an idea of how common DEP is on a modern Windows system we can look at al
 
    <img src="Images/I5.png" width=600>
 
-6. You can now see there are both processes that use DEP, and those that do not use DEP. However on this system DEP those with DEP enabled appear to be more common.
+6. You can now see that there are both processes that use DEP and those that do not. However, on this system, those with DEP enabled appear to be more common.
 
    <img src="Images/I6.png" width=600>
 
@@ -287,7 +287,7 @@ If you have attached the VChat Executable to the Immunity debugger you can run `
 
 We will use the same [exploit1.py](./SourceCode/exploit1.py) that we compiled for the [No-Dep Exploitation section](#no-dep-exploitation), for details on the commands used to generate this please refer to the earlier section.
 
-1. Attach VChat to the Immunity debugger and run the exploit against our VChat server and observe the results.
+1. Attach VChat to the Immunity debugger and run the exploit against our VChat server while observing the results.
 
 	https://github.com/DaintyJet/VChat-DEP/assets/60448620/fd17763a-d89c-4295-8076-327e3abce018
 
@@ -303,7 +303,7 @@ We will use the same [exploit1.py](./SourceCode/exploit1.py) that we compiled fo
 
       <img src="Images/I18.png" width=600>
 
-   4. Step into the JMP instruction and observe the results Notice that our instructions, in this case only the `mov` instruction is reached before an execption is raised. This is because we have DEP protections enabled and this disallows executable commands in certain memory regions such as the stack.
+   4. Step into the JMP instruction and observe the results. Notice that our instructions, in this case only the `mov` instruction is reached before an execption is raised. This is because we have DEP protections enabled and this disallows executable commands in certain memory regions such as the stack.
 
       <img src="Images/I12.png" width=600>
 
