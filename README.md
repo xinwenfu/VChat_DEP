@@ -1,4 +1,4 @@
-# VChat: Data Execution Prevention
+# VChat: Introduction to Data Execution Prevention
 > [!NOTE]
 > - The following exploit and its procedures are based on an original [Blog](https://fluidattacks.com/blog/understanding-dep/) from fluid attacks.
 > - Disable Windows *Real-time protection* at *Virus & threat protection* -> *Virus & threat protection settings*.
