@@ -8,11 +8,13 @@ ___
 
 There are a number of protections that systems put in place to prevent or limit the effectiveness of buffer overflows. There are those that attempt to prevent the attacker from gaining control over the flow of execution, like [Stack Canaries](https://www.usenix.org/legacy/publications/library/proceedings/sec98/full_papers/cowan/cowan.pdf), which aim to protect the return address. There are also those such as [Address Space Layout Randomization](https://www.ibm.com/docs/en/zos/3.1.0?topic=overview-address-space-layout-randomization) that make it more difficult for overflows to be successful or locate the addresses of the target functions, and libraries they require. With this document, we will be focusing on something known as [Data Execution Prevention (DEP)](https://learn.microsoft.com/en-us/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10#data-execution-prevention), with this protection scheme we set something known as the No eXecute (NX) bit on specific memory pages. This is generally a hardware-based protection (Software-based DEP does exist), and if the NX-bit of a memory page is set, the CPU will not allow the execution of instructions located within that memory page as it should be *read/write-only*. Looking at previous exploits, we have heavily relied on being able to execute instructions that we have placed into the stack.
 
+> [!NOTE]
+> The exact terminology used to refer to the bit that controls if a memory page can have its contents loaded and executed by the CPU differs between CPU architectures and manufacturers. For example, AMD refers to this as No-eXecute memory page protection (NX) feature and Intel refers to this as the Execute Disable bit (XD).
+>
+> For simplicity, we will use the common No eXecute (NX) bit terminology introduced earlier.
+
 > [!IMPORTANT]
 > Please set up the Windows and Linux systems as described in [SystemSetup](./SystemSetup/README.md)!
-
-
-
 ## Exploitation
 This write-up will contain two pre-exploit and exploitation sections. This is simply to show the effects of using the DEP protections. Details of creating an exploit for the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command will not be included, as this has been done previously.
 
@@ -24,16 +26,16 @@ This write-up will contain two pre-exploit and exploitation sections. This is si
       ![Open the Settings](Images/VBSettings.png)
 
    2. Navigate to the System Section.
-      
+
       ![System](Images/System.png)
 
    3. Navigate to the Processor Tab.
 
       ![Processor](Images/Processor.png)
 
-   4. Enable PAE/NX by clicking the checkbox.    
+   4. Enable PAE/NX by clicking the checkbox.
 
-      ![Enable PAE/NX](Images/EnableNX.png) 
+      ![Enable PAE/NX](Images/EnableNX.png)
 
 ### No-DEP Pre-Exploitation
 This section covers the compilation process and use of the VChat Server. We include instructions for both the original VChat code, which was compiled with MinGW and GCC on Windows, and the newly modified code, which can be compiled with the Visual Studio C++ compiler. This does not differ from the previously discussed methods, as we are not enabling any security features.
@@ -41,7 +43,7 @@ This section covers the compilation process and use of the VChat Server. We incl
 #### Visual Studio
 1. Open the [Visual Studio project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/DLL/Essfun) for the *essfunc* DLL.
 2. Build the project, as this contains inline assembly the target DLL file must be compiled as a x86 DLL (32-bits).
-3. Copy the Resulting DLL from the *Debug* folder in the [Essfunc Project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/DLL/Essfun/Debug) into the *Debug* folder in the [VChat Project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/EXE/VChat/Debug)
+3. Copy the Resulting DLL from the *Debug* folder in the [Essfunc Project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/DLL/Essfun/Debug) into the *Debug* folder in the [VChat Project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/EXE/VChat/Debug).
 
 	<img src="Images/VS-Comp.png">
 
@@ -50,9 +52,9 @@ This section covers the compilation process and use of the VChat Server. We incl
 #### Mingw/GCC
 
    1. Compile VChat and its dependencies if they have not already been compiled. This is done with mingw.
-      1. Create the essfunc object File. 
+      1. Create the essfunc object File.
 		```powershell
-		# Compile Essfunc Object file 
+		# Compile Essfunc Object file
 		$ gcc.exe -c essfunc.c
 		```
       2. Create the [DLL](https://learn.microsoft.com/en-us/troubleshoot/windows-client/deployment/dynamic-link-library) containing functions that will be used by the VChat.   
@@ -63,7 +65,7 @@ This section covers the compilation process and use of the VChat Server. We incl
          * ```-shared -o essfunc.dll```: We create a DLL "essfunc.dll", these are equivalent to the [shared library](https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html) in Linux.
          * ```-Wl,--out-implib=libessfunc.a```: We tell the linker to generate an import library "libessfunc.a" [2].
          * ```-Wl,--image-base=0x62500000```: We specify the [Base Address](https://learn.microsoft.com/en-us/cpp/build/reference/base-base-address?view=msvc-170) as ```0x62500000``` [3].
-         * ```essfunc.o```: We build the DLL based on the object file "essfunc.o"
+         * ```essfunc.o```: We build the DLL based on the object file "essfunc.o".
       3. Compile the VChat application.
 		```powershell
 		# Compile and Link VChat
@@ -88,7 +90,7 @@ This section covers the compilation process and use of the VChat Server. We incl
 
 		![NMap](Images/Nmap.png)
 
-4. **Linux**: As we can see the port ```9999``` is open, we can try accessing it using **Telnet** to send unencrypted communications
+4. **Linux**: As we can see the port ```9999``` is open, we can try accessing it using **Telnet** to send unencrypted communications.
 	```
 	$ telnet <VChat-IP> <Port>
 
@@ -102,7 +104,7 @@ This section covers the compilation process and use of the VChat Server. We incl
 		![Telnet](Images/Telnet.png)
 
 
-### No-DEP Exploitation 
+### No-DEP Exploitation
 We will be performing a simple overflow against the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command on VChat. This example can be done against any of the other exploitable VCHAT commands. However *TRUN* was chosen due to its simplicity. Again, this will not cover the methods we used to determine how we can exploit *TRUN* and the creation of the payload; we will only show the final exploitation for a later comparison against a VChat server with the DEP protections enabled. To show this, we only need to try and execute some instruction and there are hundreds of machine instructions we can chose from depending on the underlying machine architecture, as we are attacking a 32-bit x86 system we can chose a few simple instructions in this attack. In this case, we chose the `add`, `mov`, and `sub` instructions. If you would like to modify the assembly instructions, you can generate the machine code using the command `/usr/share/metasploit-framework/tools/exploit/nasm_shell.rb` on a *Kali Linux* system as has been discussed in other writeups.
 
 1. Compile the necessary machine instructions.
@@ -171,12 +173,12 @@ On **Windows** in order to benifit from DEP we must set the NX-bit in various re
 #### Visual Studio
 1. Open the [Visual Studio project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/DLL/Essfun) for the *essfunc* DLL.
 2. Build the project, as this contains inline assembly the target DLL file must be compiled as a x86 DLL (32-bits).
-3. Copy the Resulting DLL from the *Debug* folder in the [Essfunc Project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/DLL/Essfun/Debug) into the *Debug* folder in the [VChat Project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/EXE/VChat/Debug)
+3. Copy the Resulting DLL from the *Debug* folder in the [Essfunc Project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/DLL/Essfun/Debug) into the *Debug* folder in the [VChat Project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/EXE/VChat/Debug).
 
 	<img src="Images/VS-Comp.png">
 
 4. Open the [Visual Studio project](https://github.com/DaintyJet/vchat-fork/tree/main/Server/Visual%20Studio%20Projects/EXE/VChat) for the *VChat* EXE.
-5. Open the Project Dropdown and select `Properties`
+5. Open the Project Dropdown and select `Properties`.
 
 	<img src="Images/VS-Drop.png">
 
@@ -190,9 +192,9 @@ On **Windows** in order to benifit from DEP we must set the NX-bit in various re
 
 	https://github.com/DaintyJet/VChat-DEP/assets/60448620/12d8048b-e258-49aa-bee8-fb6a5027e6b4
 
-   1. Create the essfunc object File 
+   1. Create the essfunc object File
    ```powershell
-	# Compile Essfunc Object file 
+	# Compile Essfunc Object file
    $ gcc.exe -c essfunc.c
    ```
    2. Create the [DLL](https://learn.microsoft.com/en-us/troubleshoot/windows-client/deployment/dynamic-link-library) containing functions that will be used by the VChat.   
@@ -200,11 +202,11 @@ On **Windows** in order to benifit from DEP we must set the NX-bit in various re
    # Create a the DLL with a static (preferred) base address of 0x62500000
    $ gcc.exe -shared -o essfunc.dll -Wl,--out-implib=libessfunc.a -Wl,--image-base=0x62500000 essfunc.o
    ```
-      * ```-shared -o essfunc.dll```: We create a DLL "essfunc.dll", these are equivalent to the [shared library](https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html) in Linux. 
+      * ```-shared -o essfunc.dll```: We create a DLL "essfunc.dll", these are equivalent to the [shared library](https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html) in Linux.
       * ```-Wl,--out-implib=libessfunc.a```: We tell the linker to generate an import library "libessfunc.a" [2].
       * ```-Wl,--image-base=0x62500000```: We specify the [Base Address](https://learn.microsoft.com/en-us/cpp/build/reference/base-base-address?view=msvc-170) as ```0x62500000``` [3].
       * ```essfunc.o```: We build the DLL based off of the object file "essfunc.o"
-   3. Compile the VChat application with NX-Bits set. 
+   3. Compile the VChat application with NX-Bits set.
    ```powershell
 	# Compile and Link VChat with NX-Bits set
    $ gcc.exe vchat.c -Wl,-nxcompat -o vchat.exe -lws2_32 ./libessfunc.a
@@ -226,7 +228,7 @@ On **Windows** in order to benifit from DEP we must set the NX-bit in various re
       ```
 
 #### (Optional) System Wide - GUI
-We can (Optionally) modify the Windows settings to enforce Data Execution Protections on all processes; This is a *system-wide* setting. (If you have BitLocker, please do **NOT** do this unless you know what you are doing!)
+We can (Optionally) modify the Windows settings to enforce Data Execution Protections on all processes; This is a *system-wide* setting. If you have BitLocker, please do **NOT** do this unless you know what you are doing!
 
 > [!IMPORTANT]
 > ONLY do this if you have all the required recovery keys, such as a BitLocker recovery key for your device. Before the system can fully boot, you will be required to enter a Bit-Locker recovery key when this setting is enabled.
@@ -312,7 +314,7 @@ DEP is only one manner of defending against buffer overflows, when it is enabled
 ## Test code
 1. [exploit1.py](SourceCode/exploit1.py): Exploit the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command placing a `mov`, `add`, and `sub` instruction onto the stack.
 
-## References 
+## References
 [[1] Mitigate threats by using Windows 10 security features](https://learn.microsoft.com/en-us/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10#data-execution-prevention)
 
 [[2] No-Execute (NX) Nonpaged Pool](https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/no-execute-nonpaged-pool)

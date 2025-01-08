@@ -26,13 +26,12 @@ class MetasploitModule < Msf::Exploit::Remote	# This is a remote exploit module 
         [
           #[ 'URL', 'https://github.com/DaintyJet/Making-Dos-DDoS-Metasploit-Module-Vulnserver/'],
           [ 'URL', 'https://github.com/DaintyJet/VChat_DEP' ]
-
         ],
       'Privileged'     => false,
       'DefaultOptions' =>
         {
           'EXITFUNC' => 'thread', # Run the shellcode in a thread and exit the thread when it is done 
-        },      
+        },
       'Payload'        =>	# How to encode and generate the payload
         {
           'BadChars' => "\x00\x0a\x0d"	# Bad characters to avoid in generated shellcode
