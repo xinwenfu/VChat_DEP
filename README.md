@@ -18,6 +18,9 @@ There are a number of protections that systems put in place to prevent or limit 
 ## Exploitation
 This write-up will contain two pre-exploit and exploitation sections. This is simply to show the effects of using the DEP protections. Details of creating an exploit for the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command will not be included, as this has been done previously.
 
+> [!IMPORTANT]
+> The offsets and addresses shown in the following screenshots may differ from those used in the python and ruby code in this repository. This is because the offsets change slightly between the Windows 10 version of VChat compiled with GCC and the Windows 11 version compiled with the Visual Studio compiler.
+
 ### VirtualBox Configuration
 1. Within the VirtualBox Settings (If you are using VirtualBox), enable the PAE/NX features for the Windows VM in order to allow this demonstration to work.
 
