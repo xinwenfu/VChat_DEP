@@ -239,10 +239,12 @@ On **Windows** in order to benifit from DEP we must set the NX-bit in various re
       ```
 
 #### (Optional) System Wide - GUI
-We can (Optionally) modify the Windows settings to enforce Data Execution Protections on all processes; This is a *system-wide* setting. If you have BitLocker, please do **NOT** do this unless you know what you are doing!
+We can (optionally) modify the Windows settings to enforce Data Execution Protections on all processes; This is a *system-wide* setting. If you have BitLocker, please do **NOT** do this unless you know what you are doing!
 
 > [!IMPORTANT]
 > ONLY do this if you have all the required recovery keys, such as a BitLocker recovery key for your device. Before the system can fully boot, you will be required to enter a Bit-Locker recovery key when this setting is enabled.
+
+#### Advanced System Settings
 
 1. Open Windows *view advanced system settings* (Use the search bar).
 
@@ -259,7 +261,7 @@ We can (Optionally) modify the Windows settings to enforce Data Execution Protec
 4. Restart the system.
    **Note**: ONLY do this if you have all the required recovery keys, such as the BitLocker recovery key. Before the system can fully boot, you must enter a Bit-Locker recovery key.
 
-**Additionally** we can also enable this in the *Exploit Protections Settings* as shown below:
+#### Exploit Protections Settings
 
 1. Open Windows Settings.
 
