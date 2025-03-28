@@ -6,7 +6,7 @@
 > - Offsets may vary depending on what version of VChat was compiled, the version of the compiler used, and any compiler flags applied during the compilation process.
 ___
 
-There are a number of protections that systems put in place to prevent or limit the effectiveness of buffer overflows. There are those that attempt to prevent the attacker from gaining control over the flow of execution, like [Stack Canaries](https://www.usenix.org/legacy/publications/library/proceedings/sec98/full_papers/cowan/cowan.pdf), which aim to protect the return address. There are also those such as [Address Space Layout Randomization](https://www.ibm.com/docs/en/zos/3.1.0?topic=overview-address-space-layout-randomization) that make it more difficult for overflows to be successful or locate the addresses of the target functions, and libraries they require. With this document, we will be focusing on something known as [Data Execution Prevention (DEP)](https://learn.microsoft.com/en-us/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10#data-execution-prevention), with this protection scheme we set something known as the No eXecute (NX) bit on specific memory pages. This is generally a hardware-based protection (Software-based DEP does exist), and if the NX-bit of a memory page is set, the CPU will not allow the execution of instructions located within that memory page as it should be *read/write-only*. Looking at previous exploits, we have heavily relied on being able to execute instructions that we have placed into the stack.
+There are a number of protections that systems put in place to prevent or limit the effectiveness of buffer overflows. There are those that attempt to prevent the attacker from gaining control over the flow of execution, like [Stack Canaries](https://www.usenix.org/legacy/publications/library/proceedings/sec98/full_papers/cowan/cowan.pdf), which aim to protect the return address. There are also those such as [Address Space Layout Randomization](https://www.ibm.com/docs/en/zos/3.1.0?topic=overview-address-space-layout-randomization) that make it more difficult for overflows to be successful or locate the addresses of the target functions, and libraries they require. With this document, we will be focusing on something known as [Data Execution Prevention (DEP)](https://learn.microsoft.com/en-us/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10#data-execution-prevention), with this protection scheme we set something known as the No eXecute (NX) bit on specific memory pages. This is generally a hardware-based protection (Software-based DEP does exist), and if the NX-bit of a memory page is set, the CPU will not allow the execution of instructions located within that memory page as it should be *read/write-only* (?). Looking at previous exploits, we have heavily relied on being able to execute instructions that we have placed into the stack.
 
 > [!NOTE]
 > The exact terminology used to refer to the bit that controls if a memory page can have its contents loaded and executed by the CPU differs between CPU architectures and manufacturers. For example, AMD refers to this as No-eXecute memory page protection (NX) feature and Intel refers to this as the Execute Disable bit (XD).
@@ -23,6 +23,7 @@ This write-up will contain two pre-exploit and exploitation sections. This is si
 
 ### VirtualBox Configuration
 1. Within the VirtualBox Settings (If you are using VirtualBox), enable the PAE/NX features for the Windows VM in order to allow this demonstration to work.
+
 
    1. Open the VirtualBox Settings for the Windows VM.
 
@@ -123,15 +124,24 @@ We will be performing a simple overflow against the [TRUN](https://github.com/Da
 
 	https://github.com/DaintyJet/VChat-DEP/assets/60448620/087314aa-039f-4515-a7a0-0567f5bcd7f4
 
-   1. Click on the black button highlighted below, and enter the address we decided in the previous step.
+
+    1. Use the command `!mona jmp -r esp -cp nonull -o` in the Immunity Debugger's GUI command line to find a `jmp esp` instruction.
+
+	The address of a `jmp esp` instruction will be used to overwrite the return address of the victim function so that when the victim function returns, `jmp esp` gets running. When `jmp esp` runs, it jumps to the location referred to by the `ESP` register (stack top), where the shellcode will be put.
+	- The `-r esp` flag tells *mona.py* to search for the `jmp esp` instruction.
+	- The `-cp nonull` flag tells *mona.py* to ignore null values.
+	- The `-o` flag tells *mona.py* to ignore OS modules.
+	- We can select any output from this.
+
+   2. Click on the black button highlighted below, and enter the address we decided in the previous step.
 
       <img src="Images/I16.png" width=600>
 
-   2. Set a breakpoint at the desired address (Right-click).
+   3. Set a breakpoint at the desired address (Right-click).
 
       <img src="Images/I17.png" width=600>
 
-   3. Run the [exploit1.py](./SourceCode/exploit1.py) program till an overflow occurs (See EIP/ESP and stack changes), you should be able to tell by the black text at the bottom the screen that says `Breakpoint at ...`.
+   4. Run the [exploit1.py](./SourceCode/exploit1.py) program till an overflow occurs (See EIP/ESP and stack changes), you should be able to tell by the black text at the bottom the screen that says `Breakpoint at ...`.
 
       <img src="Images/I18.png" width=600>
 
