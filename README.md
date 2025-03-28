@@ -125,13 +125,11 @@ We will be performing a simple overflow against the [TRUN](https://github.com/Da
 	https://github.com/DaintyJet/VChat-DEP/assets/60448620/087314aa-039f-4515-a7a0-0567f5bcd7f4
 
 
-    1. Use the command `!mona jmp -r esp -cp nonull -o` in the Immunity Debugger's GUI command line to find a `jmp esp` instruction.
-
-	The address of a `jmp esp` instruction will be used to overwrite the return address of the victim function so that when the victim function returns, `jmp esp` gets running. When `jmp esp` runs, it jumps to the location referred to by the `ESP` register (stack top), where the shellcode will be put.
-	- The `-r esp` flag tells *mona.py* to search for the `jmp esp` instruction.
-	- The `-cp nonull` flag tells *mona.py* to ignore null values.
-	- The `-o` flag tells *mona.py* to ignore OS modules.
-	- We can select any output from this.
+    1. Use the command `!mona jmp -r esp -cp nonull -o` in the Immunity Debugger's GUI command line to find a `jmp esp` instruction. The address of a `jmp esp` instruction will be used to overwrite the return address of the victim function so that when the victim function returns, `jmp esp` gets running. When `jmp esp` runs, it jumps to the location referred to by the `ESP` register (stack top), where the shellcode will be put.
+       - The `-r esp` flag tells *mona.py* to search for the `jmp esp` instruction.
+       - The `-cp nonull` flag tells *mona.py* to ignore null values.
+       - The `-o` flag tells *mona.py* to ignore OS modules.
+       - We can select any output from this.
 
    2. Click on the black button highlighted below, and enter the address we decided in the previous step.
 
