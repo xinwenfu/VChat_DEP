@@ -19,11 +19,11 @@ There are a number of protections that systems put in place to prevent or limit 
 
 2. Search for the Exploit Protection configuration menu.
 
-   <img src="Images/I9b.png" width=600>
+   <img src="Images/I9b.png" width=800>
 
 3. Enable DEP by default.
 
-   <img src="Images/I9c.png" width=600>
+   <img src="Images/I9c.png" width=480>
 
 
 ### Exploiting With DEP
