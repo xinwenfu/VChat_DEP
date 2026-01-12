@@ -23,7 +23,7 @@ There are a number of protections that systems put in place to prevent or limit 
 
 3. Enable DEP by default.
 
-   <img src="Images/I9c.png" width=480>
+   <img src="Images/I9c.png" width=320>
 
 
 ### Exploiting With DEP
