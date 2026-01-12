@@ -28,35 +28,7 @@ There are a number of protections that systems put in place to prevent or limit 
 
 ### Exploiting With DEP
 
-> [!IMPORTANT]
-> DEP protections may not work on Virtual Machines running on specific platforms (Virtualbox Version 7.0). This may require us to run the program on some other system to show this behavior.
-
-We will use the same [exploit1.py](./SourceCode/exploit1.py) that we compiled for the [No-Dep Exploitation section](#no-dep-exploitation), for details on the commands used to generate this please refer to the earlier section.
-
-1. Attach VChat to the Immunity debugger and run the exploit against our VChat server while observing the results.
-
-	https://github.com/DaintyJet/VChat-DEP/assets/60448620/fd17763a-d89c-4295-8076-327e3abce018
-
-   1. Click on the black button highlighted below, and enter the address we decided in the previous step.
-
-      <img src="Images/I16.png" width=600>
-
-   2. Set a breakpoint at the desired address (Right-click).
-
-      <img src="Images/I17.png" width=600>
-
-   3. Run the [exploit1.py](./SourceCode/exploit1.py) program till an overflow occurs (See EIP/ESP and stack changes), you should be able to tell by the black text at the bottom the screen that says `Breakpoint at ...`.
-
-      <img src="Images/I18.png" width=600>
-
-   4. Step into the JMP instruction and observe the results. Notice that our instructions, in this case only the `mov` instruction is reached before an execption is raised. This is because we have DEP protections enabled and this disallows executable commands in certain memory regions such as the stack.
-
-      <img src="Images/I12.png" width=600>
-
-DEP is only one manner of defending against buffer overflows, when it is enabled it only makes preforming an overflow harder. It does not make them impossible, you can enable additional protections such as ASLR and Stack Canaries to make exploitations even harder. However, when DEP is the only protection enabled, we can, with relative ease, use a technique known as [Return Oriented Programming](https://dl.acm.org/doi/10.1145/2133375.2133377) to overcome the DEP protections.
-
-## Test code
-1. [exploit1.py](SourceCode/exploit1.py): Exploit the [TRUN](https://github.com/DaintyJet/VChat_TRUN) command placing a `mov`, `add`, and `sub` instruction onto the stack.
+Run the TRUN attack again.
 
 ## References
 [[1] Mitigate threats by using Windows 10 security features](https://learn.microsoft.com/en-us/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10#data-execution-prevention)
