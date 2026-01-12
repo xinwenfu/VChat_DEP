@@ -244,8 +244,8 @@ We can (optionally) modify the Windows settings to enforce Data Execution Protec
 > [!IMPORTANT]
 > ONLY do this if you have all the required recovery keys, such as a BitLocker recovery key for your device. Before the system can fully boot, you will be required to enter a Bit-Locker recovery key when this setting is enabled.
 
-#### Advanced System Settings
 <details>
+#### Advanced System Settings
 
 1. Open Windows *view advanced system settings* (Use the search bar).
 
@@ -277,7 +277,8 @@ We can (optionally) modify the Windows settings to enforce Data Execution Protec
 
    <img src="Images/I9c.png" width=600>
 
-#### (Optional) System Wide - CLI
+<details>
+#### System Wide - CLI
 You should do the following if you would rather use the Command Line Interface (CLI) for this system-wide configuration. This uses the [bcdedit](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/bcdedit) command line tool to edit the [nx](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/boot-parameters-to-configure-dep-and-pae) configurations.
 
 > [!IMPORTANT]
@@ -296,6 +297,7 @@ You should do the following if you would rather use the Command Line Interface (
 If you have attached the VChat Executable to the Immunity debugger you can run `!mona mod` to list all of the modules and their information, you will see something as pictured below; however you **Should not** see the NXBit set to *false*.
 
 <img src="Images/I10.png" width=600>
+</details>
 
 ### Exploiting With DEP
 
